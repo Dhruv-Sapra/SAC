@@ -123,22 +123,11 @@ void line_follow_task(void* arg)
         lsa_to_bar();
         
  
-        if (line_sensor_readings.adc_reading[1]>=600 && line_sensor_readings.adc_reading[2]>=600 && line_sensor_readings.adc_reading[3]>=600 && line_sensor_readings.adc_reading[4]>=600)
-        {
-           
-        //node- leftand right detected - go left
-        set_motor_speed(MOTOR_A_0, MOTOR_STOP, 0);
-        set_motor_speed(MOTOR_A_1, MOTOR_STOP, 0);
+      
         
-        set_motor_speed(MOTOR_A_0, MOTOR_BACKWARD, optimum_duty_cycle);
-        set_motor_speed(MOTOR_A_1, MOTOR_FORWARD, optimum_duty_cycle);
-        vTaskDelay(750/ portTICK_PERIOD_MS);
-        }
- 
-        
-        if(line_sensor_readings.adc_reading[1]>=600 && line_sensor_readings.adc_reading[2] >=600  && line_sensor_readings.adc_reading[3]>=600 && line_sensor_readings.adc_reading[4]<=400 )
+        if(line_sensor_readings.adc_reading[1]>=600 && line_sensor_readings.adc_reading[2] >=600  && line_sensor_readings.adc_reading[3]>=600  )
         {
-        //Left turn detected-go left
+        //Left or right+left turn detected-go left
         
         set_motor_speed(MOTOR_A_0, MOTOR_STOP, 0);
         set_motor_speed(MOTOR_A_1, MOTOR_STOP, 0);
@@ -148,16 +137,16 @@ void line_follow_task(void* arg)
         vTaskDelay(750/ portTICK_PERIOD_MS);
         } 
  
-        if(line_sensor_readings.adc_reading[1]<=400 && line_sensor_readings.adc_reading[2] >=600  && line_sensor_readings.adc_reading[3]>=600 && line_sensor_readings.adc_reading[4]>=600 )
+        else if(line_sensor_readings.adc_reading[1]<=400 && line_sensor_readings.adc_reading[2] >=600  && line_sensor_readings.adc_reading[3]>=600 && line_sensor_readings.adc_reading[4]>=600 )
         {
         //Right turn detected-go forward
         set_motor_speed(MOTOR_A_0, MOTOR_FORWARD, optimum_duty_cycle);
         set_motor_speed(MOTOR_A_1, MOTOR_FORWARD, optimum_duty_cycle);
-        vTaskDelay(10/ portTICK_PERIOD_MS);
+        vTaskDelay(20/ portTICK_PERIOD_MS);
 
         }
  
-        if(line_sensor_readings.adc_reading[1] <=400  && line_sensor_readings.adc_reading[2] <=400  && line_sensor_readings.adc_reading[3]<=400  && line_sensor_readings.adc_reading[4]<=400 )
+        else if(line_sensor_readings.adc_reading[1] <=400  && line_sensor_readings.adc_reading[2] <=400  && line_sensor_readings.adc_reading[3]<=400  && line_sensor_readings.adc_reading[4]<=400 )
         {
         //all Black detected- 180 turn
         set_motor_speed(MOTOR_A_0, MOTOR_STOP, 0);
@@ -165,7 +154,7 @@ void line_follow_task(void* arg)
         
         set_motor_speed(MOTOR_A_1, MOTOR_BACKWARD, optimum_duty_cycle);
         set_motor_speed(MOTOR_A_0, MOTOR_FORWARD, optimum_duty_cycle);
-        vTaskDelay(1500/ portTICK_PERIOD_MS);
+        vTaskDelay(750/ portTICK_PERIOD_MS);
         }
         
          line_sensor_readings = read_line_sensor();
