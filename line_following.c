@@ -137,7 +137,7 @@ void line_follow_task(void* arg)
         vTaskDelay(750/ portTICK_PERIOD_MS);
         } 
  
-        else if(line_sensor_readings.adc_reading[1]<=400 && line_sensor_readings.adc_reading[2] >=600  && line_sensor_readings.adc_reading[3]>=600 && line_sensor_readings.adc_reading[4]>=600 )
+        else if(line_sensor_readings.adc_reading[1]<=300 && line_sensor_readings.adc_reading[2] >=600  && line_sensor_readings.adc_reading[3]>=600 && line_sensor_readings.adc_reading[4]>=600 )
         {
         //Right turn detected-go forward
         set_motor_speed(MOTOR_A_0, MOTOR_FORWARD, optimum_duty_cycle);
@@ -146,7 +146,7 @@ void line_follow_task(void* arg)
 
         }
  
-        else if(line_sensor_readings.adc_reading[1] <=400  && line_sensor_readings.adc_reading[2] <=400  && line_sensor_readings.adc_reading[3]<=400  && line_sensor_readings.adc_reading[4]<=400 )
+        else if(line_sensor_readings.adc_reading[1] <=300  && line_sensor_readings.adc_reading[2] <=300  && line_sensor_readings.adc_reading[3]<=300  && line_sensor_readings.adc_reading[4]<=300 )
         {
         //all Black detected- 180 turn
         set_motor_speed(MOTOR_A_0, MOTOR_STOP, 0);
@@ -175,7 +175,7 @@ void line_follow_task(void* arg)
  
         
         //ESP_LOGI("debug","left_duty_cycle:  %f    ::  right_duty_cycle :  %f  :: error :  %f  correction  :  %f  \n",left_duty_cycle, right_duty_cycle, error, correction);
-        ESP_LOGI("debug", "KP: %f ::  KI: %f  :: KD: %f", read_pid_const().kp, read_pid_const().ki, read_pid_const().kd);
+        ESP_LOGI("debug", "Lsa1: %d ::  Lsa2: %d  :: Lsa3: %d :: Lsa4: %d" , line_sensor_readings.adc_reading[0], line_sensor_readings.adc_reading[1],line_sensor_readings.adc_reading[2],line_sensor_readings.adc_reading[3]);
 #ifdef CONFIG_ENABLE_OLED
         // Diplaying kp, ki, kd values on OLED 
         if (read_pid_const().val_changed)
