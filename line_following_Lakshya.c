@@ -134,18 +134,18 @@ void line_follow_task(void* arg)
         
         set_motor_speed(MOTOR_A_0, MOTOR_BACKWARD, optimum_duty_cycle);
         set_motor_speed(MOTOR_A_1, MOTOR_FORWARD, optimum_duty_cycle);
-        vTaskDelay(500/ portTICK_PERIOD_MS);
+        vTaskDelay(650/ portTICK_PERIOD_MS);
         } 
  
         else if(line_sensor_readings.adc_reading[0]<=400 && line_sensor_readings.adc_reading[1] <=400  && line_sensor_readings.adc_reading[2]<=400 && line_sensor_readings.adc_reading[3]<=400 )
-        {
+        {//all black - 180 deg turn
 
         set_motor_speed(MOTOR_A_0, MOTOR_STOP, 0);
         set_motor_speed(MOTOR_A_1, MOTOR_STOP, 0);
 
         set_motor_speed(MOTOR_A_0, MOTOR_FORWARD, optimum_duty_cycle);
         set_motor_speed(MOTOR_A_1, MOTOR_BACKWARD, optimum_duty_cycle);
-        vTaskDelay(500/ portTICK_PERIOD_MS);
+        vTaskDelay(650/ portTICK_PERIOD_MS);
         }
  
         // else if(line_sensor_readings.adc_reading[1] <=400  && line_sensor_readings.adc_reading[2] <=400  && line_sensor_readings.adc_reading[3]<=400  && line_sensor_readings.adc_reading[4]<=400 )
@@ -198,4 +198,3 @@ void app_main()
     xTaskCreate(&line_follow_task, "line_follow_task", 4096, NULL, 1, NULL);
     start_tuning_http_server();
 }
-
