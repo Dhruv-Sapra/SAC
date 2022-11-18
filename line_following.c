@@ -3,6 +3,7 @@
 #include "freertos/task.h"
 #include "sra_board.h"
 #include "tuning_http_server.h"
+#include <driver/gpio.h>
  
 #define MODE NORMAL_MODE
 #define BLACK_MARGIN 400
@@ -10,6 +11,8 @@
 #define bound_LSA_LOW 0
 #define bound_LSA_HIGH 1000
  
+esp_err_t ret;
+
 /*
  * weights given to respective line sensor
  */
@@ -20,7 +23,7 @@ const int weights[4] = {3,1,-1,-3};
  */
 int optimum_duty_cycle = 55;
 int lower_duty_cycle = 35;
-int higher_duty_cycle = 75;
+int higher_duty_cycle = 65;
 float left_duty_cycle = 0, right_duty_cycle = 0;
  
 /*
@@ -32,7 +35,7 @@ float error=0, prev_error=0, difference, cumulative_error, correction;
  * Union containing line sensor readings
  */
 line_sensor_array line_sensor_readings;
- 
+int counter=0;
  
 void lsa_to_bar()
 {   
@@ -101,6 +104,12 @@ void line_follow_task(void* arg)
     ESP_ERROR_CHECK(enable_motor_driver(a, NORMAL_MODE));
     ESP_ERROR_CHECK(enable_line_sensor());
     ESP_ERROR_CHECK(enable_bar_graph());
+    esp_err_t err;
+    err = gpio_set_direction(GPIO_NUM_26,GPIO_MODE_INPUT);
+    gpio_config_t gcon;
+    gcong.mode = GPIO_MODE_INPUT;
+    ret = gpio_config(&gcon);
+    int ir_val = gpio_get_level(GPIO_NUM_26);
 #ifdef CONFIG_ENABLE_OLED
     // Declaring the required OLED struct
     u8g2_t oled_config;
@@ -111,6 +120,8 @@ void line_follow_task(void* arg)
     
     while(true)
     {
+        ir_val = gpio_get_level(GPIO_NUM_26);
+
         line_sensor_readings = read_line_sensor();
         for(int i = 0; i < 4; i++)
         {
@@ -122,10 +133,14 @@ void line_follow_task(void* arg)
         calculate_correction();
         lsa_to_bar();
         
- 
-      
+         while ir_val == 0 {
+             ESP_LOGI("debug","Object  detected, clear path");
+
+          
+        }
         
-        if(line_sensor_readings.adc_reading[0]>=700 && line_sensor_readings.adc_reading[1] >=700  && line_sensor_readings.adc_reading[2]>=700  )
+        
+        if(line_sensor_readings.adc_reading[0]>=700 && line_sensor_readings.adc_reading[1] >=700  && line_sensor_readings.adc_reading[2]>=700 )
         {
         //Left or right+left turn detected-go left
         
@@ -135,21 +150,11 @@ void line_follow_task(void* arg)
         set_motor_speed(MOTOR_A_0, MOTOR_BACKWARD, optimum_duty_cycle);
         set_motor_speed(MOTOR_A_1, MOTOR_FORWARD, optimum_duty_cycle);
         vTaskDelay(750/ portTICK_PERIOD_MS);
-        } 
-        
+        }   
  
-        else if(line_sensor_readings.adc_reading[0]<=300 && line_sensor_readings.adc_reading[1] >=700  && line_sensor_readings.adc_reading[2]>=700 && line_sensor_readings.adc_reading[3]>=700 )
+        else if(line_sensor_readings.adc_reading[0] <=500  && line_sensor_readings.adc_reading[1] <=500  && line_sensor_readings.adc_reading[2]<=500  && line_sensor_readings.adc_reading[3]<=500 )
         {
-        //Right turn detected-go forward
-        set_motor_speed(MOTOR_A_0, MOTOR_FORWARD, optimum_duty_cycle);
-        set_motor_speed(MOTOR_A_1, MOTOR_FORWARD, optimum_duty_cycle);
-        vTaskDelay(30/ portTICK_PERIOD_MS);
-
-        }
- 
-        else if(line_sensor_readings.adc_reading[0] <=300  && line_sensor_readings.adc_reading[1] <=300  && line_sensor_readings.adc_reading[2]<=300  && line_sensor_readings.adc_reading[3]<=300 )
-        {
-        //all Black detected- 180 turn
+        //all Black/pink detected- 180 turn
         set_motor_speed(MOTOR_A_0, MOTOR_STOP, 0);
         set_motor_speed(MOTOR_A_1, MOTOR_STOP, 0);
         
@@ -157,8 +162,17 @@ void line_follow_task(void* arg)
         set_motor_speed(MOTOR_A_0, MOTOR_FORWARD, optimum_duty_cycle);
         vTaskDelay(750/ portTICK_PERIOD_MS);
         }
-        
-         line_sensor_readings = read_line_sensor();
+ 
+        else if(line_sensor_readings.adc_reading[0] >=700  && line_sensor_readings.adc_reading[1] <=400  && line_sensor_readings.adc_reading[2] <=400  && line_sensor_readings.adc_reading[3]>=700 )
+        {
+        //colour blind
+        set_motor_speed(MOTOR_A_1, MOTOR_FORWARD, optimum_duty_cycle);
+        set_motor_speed(MOTOR_A_0, MOTOR_FORWARD, optimum_duty_cycle);
+        // vTaskDelay(10/ portTICK_PERIOD_MS);
+        }
+
+       
+        line_sensor_readings = read_line_sensor();
         for(int i = 0; i < 4; i++)
         {
             line_sensor_readings.adc_reading[i] = bound(line_sensor_readings.adc_reading[i], BLACK_MARGIN, WHITE_MARGIN);
@@ -174,9 +188,8 @@ void line_follow_task(void* arg)
         set_motor_speed(MOTOR_A_0, MOTOR_FORWARD, left_duty_cycle);
         set_motor_speed(MOTOR_A_1, MOTOR_FORWARD, right_duty_cycle);
  
-        
-        //ESP_LOGI("debug","left_duty_cycle:  %f    ::  right_duty_cycle :  %f  :: error :  %f  correction  :  %f  \n",left_duty_cycle, right_duty_cycle, error, correction);
         ESP_LOGI("debug", "Lsa1: %d ::  Lsa2: %d  :: Lsa3: %d :: Lsa4: %d" , line_sensor_readings.adc_reading[0], line_sensor_readings.adc_reading[1],line_sensor_readings.adc_reading[2],line_sensor_readings.adc_reading[3]);
+        
 #ifdef CONFIG_ENABLE_OLED
         // Diplaying kp, ki, kd values on OLED 
         if (read_pid_const().val_changed)
@@ -187,11 +200,13 @@ void line_follow_task(void* arg)
 #endif
  
         vTaskDelay(10 / portTICK_PERIOD_MS);
+        
+
     }
- 
     vTaskDelete(NULL);
+    
 }
- 
+
 void app_main()
 {
     xTaskCreate(&line_follow_task, "line_follow_task", 4096, NULL, 1, NULL);
