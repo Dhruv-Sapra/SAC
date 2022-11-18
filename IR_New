@@ -106,7 +106,7 @@ void line_follow_task(void* arg)
     esp_err_t err;
     err = gpio_set_direction(GPIO_NUM_26,GPIO_MODE_INPUT);
     gpio_config_t gcon;
-    gcong.mode = GPIO_MODE_INPUT;
+    gcon.mode = GPIO_MODE_INPUT;
     ret = gpio_config(&gcon);
 #ifdef CONFIG_ENABLE_OLED
     // Declaring the required OLED struct
