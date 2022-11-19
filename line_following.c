@@ -17,7 +17,7 @@ esp_err_t ret;
  * weights given to respective line sensor
  */
 const int weights[4] = {3, 1, -1, -3};
-const int weights2[4] = {1, 3, -3, -1};
+const int weights2[4] = {-1, -3, 3, 1};
 
 /*
  * Motor value boundts
@@ -99,6 +99,7 @@ void calculate_error()
     }
 }
 
+
 void calculate_error2()
 {
     int all_black_flag = 1; // assuming initially all black condition
@@ -136,6 +137,8 @@ void calculate_error2()
         error = pos;
     }
 }
+
+
 void line_follow_task(void *arg)
 {
     ESP_ERROR_CHECK(enable_motor_driver(a, NORMAL_MODE));
@@ -192,25 +195,24 @@ void line_follow_task(void *arg)
             vTaskDelay(750 / portTICK_PERIOD_MS);
         }
 
-        while (line_sensor_readings.adc_reading[0] >= 700 && line_sensor_readings.adc_reading[1] <= 400 && line_sensor_readings.adc_reading[2] <= 400 && line_sensor_readings.adc_reading[3] >= 700)
+        while (line_sensor_readings.adc_reading[0] >= 700 && line_sensor_readings.adc_reading[1] <= 600 && line_sensor_readings.adc_reading[2] <= 600 && line_sensor_readings.adc_reading[3] >= 700)
         {
             // colour blind
             line_sensor_readings = read_line_sensor();
-            for (int i = 0; i < 4; i++)
-            {
-                line_sensor_readings.adc_reading[i] = bound(line_sensor_readings.adc_reading[i], BLACK_MARGIN, WHITE_MARGIN);
-                line_sensor_readings.adc_reading[i] = map(line_sensor_readings.adc_reading[i], BLACK_MARGIN, WHITE_MARGIN, bound_LSA_LOW, bound_LSA_HIGH);
-            }
+        for (int i = 0; i < 4; i++)
+        {
+            line_sensor_readings.adc_reading[i] = bound(line_sensor_readings.adc_reading[i], BLACK_MARGIN, WHITE_MARGIN);
+            line_sensor_readings.adc_reading[i] = map(line_sensor_readings.adc_reading[i], BLACK_MARGIN, WHITE_MARGIN, bound_LSA_LOW, bound_LSA_HIGH);
+        }
+        calculate_error2();
+        calculate_correction();
+        lsa_to_bar();
 
-            calculate_error2();
-            calculate_correction();
-            lsa_to_bar();
-            left_duty_cycle = bound((optimum_duty_cycle - correction), lower_duty_cycle, higher_duty_cycle);
-            right_duty_cycle = bound((optimum_duty_cycle + correction), lower_duty_cycle, higher_duty_cycle);
+        left_duty_cycle = bound((optimum_duty_cycle - correction), lower_duty_cycle, higher_duty_cycle);
+        right_duty_cycle = bound((optimum_duty_cycle + correction), lower_duty_cycle, higher_duty_cycle);
 
-            set_motor_speed(MOTOR_A_0, MOTOR_FORWARD, left_duty_cycle);
-            set_motor_speed(MOTOR_A_1, MOTOR_FORWARD, right_duty_cycle);
-
+        set_motor_speed(MOTOR_A_0, MOTOR_FORWARD, left_duty_cycle);
+        set_motor_speed(MOTOR_A_1, MOTOR_FORWARD, right_duty_cycle);
             // vTaskDelay(10/ portTICK_PERIOD_MS);
         }
 
@@ -218,11 +220,7 @@ void line_follow_task(void *arg)
         {
             ESP_LOGI("debug", "Object detected");
         }
-        else
-        {
-            ESP_LOGI("debug", "Object not detected, clear path");
-        }
-
+       
         line_sensor_readings = read_line_sensor();
         for (int i = 0; i < 4; i++)
         {
@@ -249,6 +247,7 @@ void line_follow_task(void *arg)
             reset_val_changed_pid_const();
         }
 #endif
+       vTaskDelay(10 / portTICK_PERIOD_MS);
     }
     vTaskDelete(NULL);
 }
