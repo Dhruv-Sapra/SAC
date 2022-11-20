@@ -219,16 +219,25 @@ void line_follow_task(void *arg)
         while (ir_val == 0)
         {
             ESP_LOGI("debug", "Object detected");
-            set_motor_speed(MOTOR_A_0, MOTOR_FORWARD, 70);
-            set_motor_speed(MOTOR_A_1, MOTOR_FORWARD, 70);
+            set_motor_speed(MOTOR_A_0, MOTOR_FORWARD, 60);
+            set_motor_speed(MOTOR_A_1, MOTOR_FORWARD, 60);
+            line_sensor_readings = read_line_sensor();
+             for (int i = 0; i < 4; i++)
+            {
+            line_sensor_readings.adc_reading[i] = bound(line_sensor_readings.adc_reading[i], BLACK_MARGIN, WHITE_MARGIN);
+            line_sensor_readings.adc_reading[i] = map(line_sensor_readings.adc_reading[i], BLACK_MARGIN, WHITE_MARGIN, bound_LSA_LOW, bound_LSA_HIGH);
+           }
+
+      
             
-            if (line_sensor_readings.adc_reading[0] <= 500 && line_sensor_readings.adc_reading[1] <= 500 && line_sensor_readings.adc_reading[2] <= 500 && line_sensor_readings.adc_reading[3] <= 500)
+        if (line_sensor_readings.adc_reading[0] <= 500 && line_sensor_readings.adc_reading[1] <= 500 && line_sensor_readings.adc_reading[2] <= 500 && line_sensor_readings.adc_reading[3] <= 500)
            {set_motor_speed(MOTOR_A_0, MOTOR_STOP, 0);
             set_motor_speed(MOTOR_A_1, MOTOR_STOP, 0);
 
             set_motor_speed(MOTOR_A_1, MOTOR_BACKWARD, optimum_duty_cycle);
             set_motor_speed(MOTOR_A_0, MOTOR_FORWARD, optimum_duty_cycle);
             vTaskDelay(750 / portTICK_PERIOD_MS);
+            //ir_val == 1;
 
             }
         }
