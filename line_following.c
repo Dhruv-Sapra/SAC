@@ -36,6 +36,7 @@ float error = 0, prev_error = 0, difference, cumulative_error, correction;
  * Union containing line sensor readings
  */
 line_sensor_array line_sensor_readings;
+int counter=0;
 
 void lsa_to_bar()
 {
@@ -185,6 +186,7 @@ void line_follow_task(void *arg)
         else if (line_sensor_readings.adc_reading[0] <= 500 && line_sensor_readings.adc_reading[1] <= 500 && line_sensor_readings.adc_reading[2] <= 500 && line_sensor_readings.adc_reading[3] <= 500)
         {
             // all Black detected- 180 turn
+            counter = 0;
             set_motor_speed(MOTOR_A_0, MOTOR_STOP, 0);
             set_motor_speed(MOTOR_A_1, MOTOR_STOP, 0);
 
@@ -196,6 +198,7 @@ void line_follow_task(void *arg)
         while (line_sensor_readings.adc_reading[0] >= 700 && line_sensor_readings.adc_reading[1] <= 600 && line_sensor_readings.adc_reading[2] <= 600 && line_sensor_readings.adc_reading[3] >= 700)
         {
             // colour blind
+            counter = 0;
             line_sensor_readings = read_line_sensor();
             for (int i = 0; i < 4; i++)
             {
@@ -229,12 +232,26 @@ void line_follow_task(void *arg)
                     line_sensor_readings.adc_reading[i] = map(line_sensor_readings.adc_reading[i], BLACK_MARGIN, WHITE_MARGIN, bound_LSA_LOW, bound_LSA_HIGH);
                 }
             }
+            counter = 0;
             set_motor_speed(MOTOR_A_0, MOTOR_STOP, 0);
             set_motor_speed(MOTOR_A_1, MOTOR_STOP, 0);
 
             set_motor_speed(MOTOR_A_1, MOTOR_BACKWARD, optimum_duty_cycle);
             set_motor_speed(MOTOR_A_0, MOTOR_FORWARD, optimum_duty_cycle);
             vTaskDelay(750 / portTICK_PERIOD_MS);
+        }
+        if (line_sensor_readings.adc_reading[0] >= 600 && line_sensor_readings.adc_reading[1] >= 600 && line_sensor_readings.adc_reading[2] >= 600 && line_sensor_readings.adc_reading[3] >= 600)
+        {
+            // stop
+            counter = counter + 1; 
+            if (counter > 3)
+            {
+                while (true)
+                {
+                    set_motor_speed(MOTOR_A_0, MOTOR_STOP, 0);
+                    set_motor_speed(MOTOR_A_1, MOTOR_STOP, 0);
+                }
+            }
         }
 
         line_sensor_readings = read_line_sensor();
