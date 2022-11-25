@@ -210,7 +210,7 @@ void line_follow_task(void *arg)
         while (line_sensor_readings.adc_reading[0] >= 500 && line_sensor_readings.adc_reading[1] <= 700 && line_sensor_readings.adc_reading[2] <= 700 && line_sensor_readings.adc_reading[3] >= 500)
         {
             // colour blind
-           // counter = 0;
+            counter = 0;
             line_sensor_readings = read_line_sensor();
             for (int i = 0; i < 4; i++)
             {
